@@ -1,9 +1,12 @@
 package sdk
 
-type Context struct {
-  MyField string
+type Context struct { }
+
+type SetFieldRec struct {
+  C string
+  D string
 }
 
-func SetField(ctx Context, field string) error{
-  return nil;
+func SetField(ctx Context, rec SetFieldRec) error {
+  return nil
 }

@@ -4,80 +4,46 @@ import (
   "sdk"
 )
 
-type StructWithTaintedField struct {
-  TaintedField string
-  UntaintedField string
+type SimpleStruct struct {
+  Tainted string
+  Untainted string
 }
 
-type SomeOtherStruct struct {
-  Nested StructWithTaintedField
-  UntaintedField string
-  MapDemo map[string] string
+type CompoundStruct struct {
+  Tainted string
+  Nested SimpleStruct
+  Untainted string
+  M map[string] string
 }
 
-func MethodA(ctx sdk.Context, e StructWithTaintedField) error {
-  tainted := e.TaintedField;
-  if err := sdk.SetField(ctx, tainted); err != nil {
-    return err
+func MethodA(ctx sdk.Context, s CompoundStruct) {
+  localA := s.Nested.Tainted
+  localB := s.Nested.Untainted
+  localC := s.M["C"]
+  localD := s.Tainted
+  rec := sdk.SetFieldRec {
+    C: localA,
+    D: localB,
   }
 
-  var nottainted = e.UntaintedField;
-  if err := sdk.SetField(ctx, nottainted); err != nil {
-    return err
-  }
+  rec2 := rec
 
-  return nil;
+  MethodB(ctx, rec2)
+
+  var rec3 sdk.SetFieldRec
+  rec3.D = localC
+  MethodB(ctx, rec3)
+
+  rec2.C = localD
+  MethodB(ctx, rec2)
 }
 
-func MethodB(ctx sdk.Context, e SomeOtherStruct) error {
-  tainted := e.Nested.TaintedField;
-  if err := sdk.SetField(ctx, tainted); err != nil {
-    return err
-  }
-
-  tainted = e.MapDemo["FieldC"];
-  if err := sdk.SetField(ctx, tainted); err != nil {
-    return err
-  }
-
-  nottainted := e.Nested.UntaintedField;
-  if err := sdk.SetField(ctx, nottainted); err != nil {
-    return err
-  }
-
-  nottainted = e.MapDemo["SomeOtherField"];
-  if err := sdk.SetField(ctx, nottainted); err != nil {
-    return err
-  }
-
-  nottainted = map[string] string { "FieldC": "nottainted" }["FieldC"]
-  if err := sdk.SetField(ctx, nottainted); err != nil {
-    return err
-  }
-
-  return nil
-}
-
-type SetFieldReq struct {
-    FieldC string
-    FieldD string
-}
-
-func MethodC(ctx sdk.Context, e StructWithTaintedField) SetFieldReq {
-    localVariableA := e.TaintedField
-    localVariableB := e.UntaintedField
-    req := SetFieldReq {
-        FieldC: localVariableA,
-        FieldD: localVariableB,
-    }
-    return req;
+func MethodB(ctx sdk.Context, rec sdk.SetFieldRec){
+  sdk.SetField(ctx, rec)
 }
 
 func main() {
   var ctx sdk.Context
-  var s1 StructWithTaintedField
-  var s2 SomeOtherStruct
-  MethodA(ctx, s1)
-  MethodB(ctx, s2)
-  MethodC(ctx, s1)
+  var s CompoundStruct
+  MethodA(ctx, s)
 }
